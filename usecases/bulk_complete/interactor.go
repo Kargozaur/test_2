@@ -56,6 +56,7 @@ func (i *Interactor) Execute(ctx context.Context, orderIDs []string) error {
 		wg.Add(1)
 		i.semaphore.Acquire()
 		go func(orderID string) {
+			defer wg.Done()
 			defer i.semaphore.Release()
 			err := i.repo.WithinTx(ctx, func(ctx context.Context, tx contracts.Tx) error {
 				order, err := i.repo.RetrieveForUpdate(ctx, tx, orderID)
