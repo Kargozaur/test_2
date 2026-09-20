@@ -50,7 +50,7 @@ func (i *Interactor) Execute(ctx context.Context, orderIDs []string) error {
 	}
 	for _, id := range ids {
 		if ctx.Err() != nil {
-			errs = append(errs, ctx.Err())
+			addErr(ctx.Err())
 			continue
 		}
 		wg.Add(1)
