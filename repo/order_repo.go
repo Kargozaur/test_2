@@ -82,7 +82,7 @@ func (r *Repo) CreateAuditLog(ctx context.Context, tx contracts.Tx, orderID, act
 		return err
 	}
 	_, err = t.ExecContext(ctx,
-		`insert into order_audit_log (order_id, action, detail, created_at) VALUES (?, ?, ?, now())`,
+		`insert into audit_logs (order_id, action, detail, created_at) VALUES (?, ?, ?, now())`,
 		orderID, action, detail)
 	return err
 }
