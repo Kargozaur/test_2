@@ -18,8 +18,13 @@ func NewSemaphore(lim int) *Semaphore {
 	}
 }
 
-func (s *Semaphore) Acquire() {
-	s.ch <- struct{}{}
+func (s *Semaphore) Acquire(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case s.ch <- struct{}{}:
+		return nil
+	}
 }
 
 func (s *Semaphore) Release() {
@@ -32,6 +37,9 @@ type Interactor struct {
 }
 
 func New(repo contracts.Repository, maxExecutions int) *Interactor {
+	if maxExecutions < 0 {
+		return nil
+	}
 	return &Interactor{
 		repo:      repo,
 		semaphore: NewSemaphore(maxExecutions),
@@ -51,10 +59,14 @@ func (i *Interactor) Execute(ctx context.Context, orderIDs []string) error {
 	for _, id := range ids {
 		if ctx.Err() != nil {
 			addErr(ctx.Err())
-			continue
+			break
 		}
 		wg.Add(1)
-		i.semaphore.Acquire()
+		if err := i.semaphore.Acquire(ctx); err != nil {
+			addErr(err)
+			wg.Done()
+			continue
+		}
 		go func(orderID string) {
 			defer wg.Done()
 			defer i.semaphore.Release()
